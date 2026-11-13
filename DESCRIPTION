@@ -1,4 +1,4 @@
-Package: locpol
+Package: locpol.with.lolocv
 Version: 0.8.0
 Title: Kernel Local Polynomial Regression
 Authors@R: c(

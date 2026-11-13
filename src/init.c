@@ -31,13 +31,13 @@ static const R_CMethodDef CEntries[] = {
     {"locWeightsEvalxx",  (DL_FUNC) &locWeightsEvalxx,   5},
     {"looLocPolSmoother", (DL_FUNC) &looLocPolSmoother, 10},
     {"parzenRossen",      (DL_FUNC) &parzenRossen,       8},
-    {"regCVBwEvalB",      (DL_FUNC) &regCVBwEvalB,       8},
+    {"regCVBwEvalB",      (DL_FUNC) &regCVBwEvalB,       9},
     {"simpleSmoother",    (DL_FUNC) &simpleSmoother,     9},
     {"simpleSqSmoother",  (DL_FUNC) &simpleSqSmoother,   8},
     {NULL, NULL, 0}
 };
 
-void R_init_locpol(DllInfo *dll)
+void R_init_locpol_with_lolocv(DllInfo *dll)
 {
     R_registerRoutines(dll, CEntries, NULL, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);

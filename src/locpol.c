@@ -645,6 +645,7 @@ void locPolSmoother(double *xeval, int *neval,
  */
 void looLocPolSmoother(	double *x, double *y, double *weig, int*n,
 						double *bw, int *deg, int *Ktype, int *compDet,
+						int *folds, /* added this to perform k-fold CV */
 						double *den, double *beta)
 /*
  * 	x = x data vector.
@@ -668,78 +669,64 @@ void looLocPolSmoother(	double *x, double *y, double *weig, int*n,
 	double  s[MAXS], t[MAXT], z[MAXDEG], det[2], aux, Kaux, rcond;
 
 	sncol = (*deg)+1;
-	//__TODO__ remove tncol = sncol;
-	/*	Selector de kernel */
 	kernel = selKernel(*Ktype);
-	/*	operaci?n */
+	
+	// Loop over all observations
 	for(i=0;i<(*n);i++)
 	{
-		/* Inicializaci?n s,t */
-		for(k=0;k<=(*deg);k++)
-		{
-			t[k] = 0.;
-			for(l=k;l<=(*deg);l++)
-					s[l*sncol+k] = 0.;
-		}
-		/* C?lculo s,t */
-		for(j=0;j<(*n);j++)
-		{
-			if( i!=j )	/* Do not consider data x_j to estim. m(x_i) if i==j */
-			{
-				aux = (x[j]-x[i])/(*bw);
-				Kaux = weig[j] * kernel( aux );
-				for(k=0;k<=(*deg);k++)
-				{
-					t[k] += y[j] * Kaux * R_pow_di(aux,k);
-					for(l=k;l<=(*deg);l++)
-						s[l*sncol+k] += Kaux * R_pow_di(aux,k+l);	/* s[k*sncol+l]=*/
-				}
-			}
-		}
-		/* Compute sol.  (det ?) */
-		rcond=TOLERANCE+1;
+	  // Initialize s and t
+	  for(k=0;k<=(*deg);k++) {
+	    t[k] = 0.;
+	    for(l=k;l<=(*deg);l++)
+	      s[l*sncol+k] = 0.;
+	  }
+	  
+	  // Compute s,t using only observations NOT in i's fold
+	  for(j=0;j<(*n);j++) {
+	    // Exclude observations in the same fold as i:
+	    if(folds[j] != folds[i]) {
+	      aux = (x[j]-x[i])/(*bw);
+	      Kaux = weig[j] * kernel(aux);
+	      for(k=0;k<=(*deg);k++) {
+	        t[k] += y[j] * Kaux * R_pow_di(aux,k);
+	        for(l=k;l<=(*deg);l++)
+	          s[l*sncol+k] += Kaux * R_pow_di(aux,k+l);
+	      }
+	    }
+	  }
+	  
+	  // Solve the local polynomial system
+	  rcond=TOLERANCE+1;
 	  info=0;
 	  dpoco_(s, &sncol, &sncol, &rcond, z, &info);
-		if( fabs(rcond)<TOLERANCE)
-		{
-			warning("Bad conditioned matrix at %f.\n",x[i]);
-			for(k=0;k<=(*deg);k++)
-				beta[k*(*n)+i] = NA_VALUE;
-			den[i] = NA_VALUE;
-		}
-		else if( info!=0 )
-		{
-			warning("Bad info result  at %f.\n",x[i]);
-			for(k=0;k<=(*deg);k++)
-				beta[k*(*n)+i] = NA_VALUE;
-			den[i] = NA_VALUE;
-		}
-		else
-		{
-			dposl_(s,  &sncol,  &sncol, t);
-			job = 10;
-			if( (*compDet) )
-			{
-				dpodi_(s,  &sncol,  &sncol, det, &job);
-				if( 1.0 <= det[0] && det[0] <= 10.0 )
-					den[i] = det[0] * R_pow (10.0, det[1]);
-				else
-					den[i] = det[0];
-			}
-			/* Colocar la soluci?n en beta y reajustar */
-			aux = (*bw);
-			l = 1;
-			beta[i] = t[0];
-			for(k=1;k<=(*deg);k++)
-			{
-				l *= k;
-				beta[k*(*n)+i] = t[k]*l/aux;
-				aux *= (*bw);
-			}
-		}
+	  
+	  if(fabs(rcond)<TOLERANCE || info!=0) {
+	    warning("Bad conditioning at %f.\n", x[i]);
+	    for(k=0;k<=(*deg);k++)
+	      beta[k*(*n)+i] = NA_VALUE;
+	    den[i] = NA_VALUE;
+	  } else {
+	    dposl_(s, &sncol, &sncol, t);
+	    job = 10;
+	    if((*compDet)) {
+	      dpodi_(s, &sncol, &sncol, det, &job);
+	      if(1.0 <= det[0] && det[0] <= 10.0)
+	        den[i] = det[0] * R_pow(10.0, det[1]);
+	      else
+	        den[i] = det[0];
+	    }
+	    // Fill beta
+	    aux = (*bw);
+	    l = 1;
+	    beta[i] = t[0];
+	    for(k=1;k<=(*deg);k++) {
+	      l *= k;
+	      beta[k*(*n)+i] = t[k]*l/aux;
+	      aux *= (*bw);
+	    }
+	  }
 	}
 }
-
 
 
 /*
@@ -848,7 +835,7 @@ void regCVBwEval(	double *h,double *x, double *y, double *weig, int *n,
 	*res /= (*n);
 }
 
-void regCVBwEvalB(	double *h,double *x, double *y, double *weig, int *n,
+void regCVBwEvalB(	double *h,double *x, double *y, double *weig, int *n, int *loc,
 					int *deg, int *Ktype, double *res)
 /*
  * 	Compute CV evaluation for beta0 and a given h,.
@@ -868,7 +855,7 @@ void regCVBwEvalB(	double *h,double *x, double *y, double *weig, int *n,
 	compDet = 0;
 	den = (double *) R_alloc( (*n), sizeof(double) );
 	beta = (double *) R_alloc( ((*deg)+1)*(*n), sizeof(double) );
-	looLocPolSmoother( x, y, weig, n, h, deg, Ktype, &compDet, den, beta);
+	looLocPolSmoother( x, y, weig, n, h, deg, Ktype, &compDet, loc, den, beta);
 	*res = 0.;
 	/* Operation */
 	for(i=0;i<(*n);i++)

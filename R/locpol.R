@@ -358,7 +358,7 @@ locPolWeights <- function (x, xeval, deg, bw, kernel,
 
 ##  s4 classes dim lib load stuff
 .onLoad <- function(lib, pkg) {
-  library.dynam("locpol", pkg, lib)
+  library.dynam("locpol.with.lolocv", pkg, lib)
 }
 
 
@@ -409,7 +409,7 @@ locWeightsEvalC <- function(lpweig,y)
 	res <- .C("locWeightsEvalxx",
 		as.double(lpweig),as.integer(nrow(lpweig)),
 		as.double(y),as.integer(length(y)),
-		res=double(nrow(lpweig)), PACKAGE="locpol"
+		res=double(nrow(lpweig)), PACKAGE="locpol.with.lolocv"
 		)
 	#rownames(res$res) <- rownames(lpweig)
     return( res$res )
@@ -432,7 +432,7 @@ simpleSmootherC <- function(x,y,xeval,bw,kernel,weig = rep(1,length(y)))
 		as.double(xeval),as.integer(length(xeval)),
 		as.double(x),as.double(y),as.double(weig),
 		as.integer(length(y)),as.double(bw), as.integer(Ktype),
-		res = double(length(xeval)), PACKAGE="locpol"
+		res = double(length(xeval)), PACKAGE="locpol.with.lolocv"
 		)$res
 	res <- data.frame(x = xeval, reg = reg)
     return( res )
@@ -456,7 +456,7 @@ PRDenEstC <- function(x,xeval,bw,kernel,weig = rep(1,length(x)))
     	as.double(xeval),as.integer(length(xeval)),
      	as.double(x),as.double(weig),as.integer(length(x)),
 		  as.double(bw), as.integer(Ktype),
-     	res = double(length(xeval)), PACKAGE="locpol"
+     	res = double(length(xeval)), PACKAGE="locpol.with.lolocv"
 		)$res
 	res <- data.frame(x = xeval, den = den)
     return( res )
@@ -482,7 +482,7 @@ locCteSmootherC <- function(x,y,xeval,bw,kernel,weig = rep(1,length(y)))
 		as.double(xeval),as.integer(length(xeval)),
 		as.double(x),as.double(y),as.double(weig),
 		as.integer(length(y)),as.double(bw), as.integer(Ktype),
-		den=double(length(xeval)),res=double(length(xeval)), PACKAGE="locpol"
+		den=double(length(xeval)),res=double(length(xeval)), PACKAGE="locpol.with.lolocv"
 		)
 	res <- data.frame(x = xeval, beta0 = res$res, den=res$den)
     return( res )
@@ -507,7 +507,7 @@ locCteWeightsC <- function(x,xeval,bw,kernel,weig = rep(1,length(x)))
 		as.double(x),as.double(weig),as.integer(length(x)),
 		as.double(bw), as.integer(Ktype),
 		den=double(length(xeval)),res=mat.or.vec(length(xeval),length(x)),
-		PACKAGE="locpol"
+		PACKAGE="locpol.with.lolocv"
 		)
 	rownames(res$res) <- xeval
 	colnames(res$res) <- 1:length(x)
@@ -535,7 +535,7 @@ locLinSmootherC <- function(x,y,xeval,bw,kernel,weig = rep(1,length(y)))
 		as.integer(length(y)),
 		as.double(bw), as.integer(Ktype),den=double(length(xeval)),
 		beta0=double(length(xeval)),beta1=double(length(xeval)), 
-		PACKAGE="locpol"
+		PACKAGE="locpol.with.lolocv"
 		)
 	res <- data.frame(x=xeval, beta0=res$beta0, beta1=res$beta1, den=res$den) 
   return( res )
@@ -561,7 +561,7 @@ locLinWeightsC <- function(x,xeval,bw,kernel,weig = rep(1,length(x)))
 		as.integer(length(x)),
 		as.double(bw), as.integer(Ktype),
 		den=double(length(xeval)),res=mat.or.vec(length(xeval),length(x)), 
-		PACKAGE="locpol"
+		PACKAGE="locpol.with.lolocv"
 		)
 	rownames(res$res) <- xeval
 	colnames(res$res) <- 1:length(x)
@@ -589,7 +589,7 @@ locCuadSmootherC <- function(x,y,xeval,bw,kernel,weig = rep(1,length(y)))
 		as.integer(length(y)),as.double(bw), as.integer(Ktype),
 		den=double(length(xeval)), beta0=double(length(xeval)),
 		beta1=double(length(xeval)), beta2=double(length(xeval)), 
-		PACKAGE="locpol"
+		PACKAGE="locpol.with.lolocv"
 		)
 	res <- data.frame(x = xeval, beta0=res$beta0, beta1=res$beta1, 
 						beta2=res$beta2, den=res$den) 
@@ -619,7 +619,7 @@ locPolSmootherC <- function(x,y,xeval,bw,deg,kernel,DET=FALSE,
 		as.integer(length(y)), as.double(bw), as.integer(deg), 
 		as.integer(Ktype), as.integer(DET),
 		den=double(length(xeval)), 
-		beta=mat.or.vec(length(xeval),(deg+1)), PACKAGE="locpol"
+		beta=mat.or.vec(length(xeval),(deg+1)), PACKAGE="locpol.with.lolocv"
 		)
 	res <- data.frame(x=xeval, beta=matrix(res$beta,ncol=deg+1),res$den) 
 	colnames(res) <- c("x",paste("beta",0:deg,sep=""),"den")
@@ -644,7 +644,7 @@ simpleSqSmootherC <- function(x,y,xeval,bw,kernel)
 		as.double(x),as.double(y),
 		as.integer(length(y)),
 		as.double(bw), as.integer(Ktype),
-     	res = double(length(xeval)), PACKAGE="locpol")$res
+     	res = double(length(xeval)), PACKAGE="locpol.with.lolocv")$res
 	res <- data.frame(x = xeval, reg = reg)
     return( res )
 }
@@ -673,7 +673,7 @@ looLocPolSmootherC <- function(x,y,bw,deg,kernel,weig=rep(1,length(y)),DET=FALSE
 		as.integer(length(y)), as.double(bw), as.integer(deg), 
 		as.integer(Ktype), as.integer(DET),
 		den=double(length(y)), beta=mat.or.vec(length(y),(deg+1)), 
-		PACKAGE="locpol"
+		PACKAGE="locpol.with.lolocv"
 		)
 	res <- data.frame(x=x, beta=matrix(res$beta,ncol=deg+1),res$den) 
 	colnames(res) <- c("x",paste("beta",0:deg,sep=""),"den")
@@ -699,11 +699,11 @@ denCVBwSelC <- function(x,kernel=gaussK,weig=rep(1,length(x)),
 	Ktype <- selKernel(kernel)
 	cvFunc <-	function(h) .C("denCVBwEval",as.double(h),
 		as.double(x),as.double(weig),as.integer(length(x)),
-		as.integer(Ktype),res = double(1), PACKAGE="locpol")$res
+		as.integer(Ktype),res = double(1), PACKAGE="locpol.with.lolocv")$res
     return( optimise(cvFunc,interval)$minimum )
 }
 
-regCVBwSelC <- function(x,y,deg,kernel=gaussK,weig=rep(1,length(y)),
+regCVBwSelC <- function(x,y,loc,deg,kernel=gaussK,weig=rep(1,length(y)),
 							interval=.lokestOptInt)
 ##OK
 #
@@ -718,8 +718,8 @@ regCVBwSelC <- function(x,y,deg,kernel=gaussK,weig=rep(1,length(y)),
 	Ktype <- selKernel(kernel)
 	cvFunc <-	function(h) .C("regCVBwEvalB",as.double(h),
      	as.double(x), as.double(y), as.double(weig),
-		as.integer(length(y)), as.integer(deg),
-		as.integer(Ktype),res = double(1), PACKAGE="locpol")$res
+		as.integer(length(y)), as.integer(loc), as.integer(deg),
+		as.integer(Ktype),res = double(1), PACKAGE="locpol.with.lolocv")$res
     return( optimise(cvFunc,interval)$minimum )
 }
 

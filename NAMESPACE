@@ -2,7 +2,7 @@
 
 
 # dlls  
-useDynLib(locpol,
+useDynLib(locpol.with.lolocv,
           locWeightsEvalxx,simpleSmoother,parzenRossen,
           locCteSmoother,locCteWeights,locLinSmoother,
           locLinWeights,locCuadSmoother,locPolSmoother,
